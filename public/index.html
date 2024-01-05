@@ -1,71 +1,192 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title>Chatting Application</title>
-    <!-- Add Tailwind CSS CDN -->
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-</head>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: "Arial", sans-serif;
+      }
 
-<body class="bg-gray-100 h-screen flex flex-col justify-center items-center">
+      .chat-container {
+        max-width: 400px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        overflow: hidden;
+      }
 
+      .chat-header {
+        background-color: #075e54;
+        color: white;
+        padding: 10px;
+        text-align: center;
+      }
+
+      .message-input {
+        width: calc(100% - 52px);
+        border: none;
+        padding: 10px;
+        outline: none;
+      }
+
+      .message-send-btn {
+        background-color: #128c7e;
+        border: none;
+        color: white;
+        padding: 10px;
+        cursor: pointer;
+      }
+
+      .message-container {
+        max-height: 400px;
+        overflow-y: auto;
+        padding: 10px;
+      }
+
+      .username-modal {
+        background-color: #f5f5f5;
+        padding: 20px;
+        border-radius: 8px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .username-submit-btn {
+        background-color: #128c7e;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+
+      #customAlert {
+        z-index: 1000;
+      }
+
+      #closeAlert {
+        background-color: #128c7e;
+        border: none;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-100 h-screen flex flex-col justify-center items-center">
     <h1 class="text-4xl mb-8">Chatting Application</h1>
 
-    <!-- Username Popup Modal -->
-    <div id="usernameModal" class="fixed inset-0 flex items-center justify-center hidden">
-        <div class="bg-white p-8 rounded-lg shadow-lg">
-            <h2 class="text-2xl mb-4">Enter Your Username</h2>
-            <input type="text" id="usernameInput" placeholder="Username" class="p-2 border rounded w-64">
-            <button id="submitUsername" class="bg-blue-500 text-white p-2 rounded mt-4">Submit</button>
-        </div>
+    <div
+      id="customAlert"
+      class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
+    >
+      <div class="bg-white p-8 rounded-lg shadow-lg">
+        <p id="alertMessage" class="text-red-500"></p>
+        <button id="closeAlert" class="bg-blue-500 text-white p-2 rounded mt-4">
+          Close
+        </button>
+      </div>
     </div>
 
-    <div class="flex mb-4">
-        <input type="text" placeholder="Enter message" id="message" class="p-2 border rounded-l w-64 focus:border-blue-500 focus:ring focus:ring-blue-200">
-        <button id="sendBtn" class="bg-blue-500 text-white p-2 rounded-r hover:bg-blue-600">Send</button>
+    <div
+      id="usernameModal"
+      class="username-modal fixed inset-0 flex items-center justify-center hidden"
+    >
+      <div>
+        <h2 class="text-2xl mb-4">Enter Your Username</h2>
+        <input
+          type="text"
+          id="usernameInput"
+          placeholder="Username"
+          class="p-2 border rounded mb-4 w-full"
+        />
+        <button id="submitUsername" class="username-submit-btn">Submit</button>
+      </div>
     </div>
 
-    <div id="show" class="bg-white p-4 w-64 h-64 overflow-y-auto">
-        <!-- Messages will be displayed here -->
+    <div class="chat-container flex flex-col">
+      <div class="chat-header">Chatting Application</div>
+      <div id="show" class="message-container flex-grow overflow-y-auto"></div>
+      <div class="flex">
+        <input
+          type="text"
+          placeholder="Enter message"
+          id="message"
+          class="message-input border rounded-l"
+        />
+        <button id="sendBtn" class="message-send-btn rounded-r">Send</button>
+      </div>
     </div>
 
-    <!-- Add Socket.io library -->
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        const socket = io();
-        const sendBtn = document.getElementById("sendBtn");
-        const messageInput = document.getElementById("message");
-        const allMessage = document.getElementById('show');
-        let username = '';
+      const socket = io();
+      const sendBtn = document.getElementById("sendBtn");
+      const messageInput = document.getElementById("message");
+      const allMessage = document.getElementById("show");
+      let username = "";
 
-        // Display username modal
-        document.addEventListener('DOMContentLoaded', function () {
-            document.getElementById('usernameModal').classList.remove('hidden');
+      document.addEventListener("DOMContentLoaded", function () {
+        document.getElementById("usernameModal").classList.remove("hidden");
+      });
+
+      document
+        .getElementById("submitUsername")
+        .addEventListener("click", function () {
+          username = document.getElementById("usernameInput").value;
+          document.getElementById("usernameModal").classList.add("hidden");
         });
 
-        // Submit username
-        document.getElementById('submitUsername').addEventListener('click', function () {
-            username = document.getElementById('usernameInput').value;
-            document.getElementById('usernameModal').classList.add('hidden');
-        });
+      function stringToColor(str) {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+          hash = str.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        const c = (hash & 0x00ffffff).toString(16).toUpperCase();
+        return "#" + "00000".substring(0, 6 - c.length) + c;
+      }
 
-        socket.on("message", (data) => {
-            const p = document.createElement('p');
-            p.innerHTML = `<strong>${data.senderId}:</strong> ${data.message}`;
-            allMessage.appendChild(p);
-        });
+      socket.on("message", (data) => {
+        const p = document.createElement("p");
+        const color = stringToColor(data.senderId);
+        p.innerHTML = `<strong style="color:${color};">${data.senderId}:</strong> ${data.message}`;
+        allMessage.appendChild(p);
+      });
 
-        sendBtn.addEventListener("click", (e) => {
-            const message = messageInput.value;
-            const senderId = username; 
-            const data = { message, senderId };
-            socket.emit("message", data);
-            messageInput.value = "";
-        });
+      sendBtn.addEventListener("click", (e) => {
+        const message = messageInput.value.trim();
 
+        if (!username) {
+          document.getElementById("alertMessage").textContent =
+            "Enter the Username";
+          document.getElementById("customAlert").classList.remove("hidden");
+          return;
+        }
+
+        if (message.length === 0) {
+          document.getElementById("alertMessage").textContent =
+            "Message cannot be empty";
+          document.getElementById("customAlert").classList.remove("hidden");
+          return;
+        }
+
+        const senderId = username;
+        const data = { message, senderId };
+        socket.emit("message", data);
+        messageInput.value = "";
+      });
+
+      document
+        .getElementById("closeAlert")
+        .addEventListener("click", function () {
+          document.getElementById("customAlert").classList.add("hidden");
+        });
+        
     </script>
-
-</body>
-
+  </body>
 </html>
