@@ -1,36 +1,71 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Chat App</title>
-  </head>
-  <body>
-    <h1>Chatting Application</h1>
-    <input type="text" placeholder="Enter message" id="message" />
-    <button id="sendBtn">Send</button>
 
-    <div id="show"></div>
+<head>
+    <meta charset="UTF-8">
+    <title>Chatting Application</title>
+    <!-- Add Tailwind CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
 
+<body class="bg-gray-100 h-screen flex flex-col justify-center items-center">
+
+    <h1 class="text-4xl mb-8">Chatting Application</h1>
+
+    <!-- Username Popup Modal -->
+    <div id="usernameModal" class="fixed inset-0 flex items-center justify-center hidden">
+        <div class="bg-white p-8 rounded-lg shadow-lg">
+            <h2 class="text-2xl mb-4">Enter Your Username</h2>
+            <input type="text" id="usernameInput" placeholder="Username" class="p-2 border rounded w-64">
+            <button id="submitUsername" class="bg-blue-500 text-white p-2 rounded mt-4">Submit</button>
+        </div>
+    </div>
+
+    <div class="flex mb-4">
+        <input type="text" placeholder="Enter message" id="message" class="p-2 border rounded-l w-64 focus:border-blue-500 focus:ring focus:ring-blue-200">
+        <button id="sendBtn" class="bg-blue-500 text-white p-2 rounded-r hover:bg-blue-600">Send</button>
+    </div>
+
+    <div id="show" class="bg-white p-4 w-64 h-64 overflow-y-auto">
+        <!-- Messages will be displayed here -->
+    </div>
+
+    <!-- Add Socket.io library -->
     <script src="/socket.io/socket.io.js"></script>
     <script>
-      const socket = io();
-      const sendBtn = document.getElementById("sendBtn");
-      const messageInput = document.getElementById("message");
-      const allMessage = document.getElementById('show')
+        const socket = io();
+        const sendBtn = document.getElementById("sendBtn");
+        const messageInput = document.getElementById("message");
+        const allMessage = document.getElementById('show');
+        let username = '';
 
+        // Display username modal
+        document.addEventListener('DOMContentLoaded', function () {
+            document.getElementById('usernameModal').classList.remove('hidden');
+        });
 
-      socket.on("message", (message) => {
-        const p = document.createElement('p')
-        p.innerHTML = message
-        allMessage.appendChild(p)
-        
-      });
+        // Submit username
+        document.getElementById('submitUsername').addEventListener('click', function () {
+            username = document.getElementById('usernameInput').value;
+            document.getElementById('usernameModal').classList.add('hidden');
+        });
 
-      sendBtn.addEventListener("click", (e) => {
-        const message = messageInput.value;
-        socket.emit("message", message);
-      });
+        socket.on("message", (data) => {
+            const p = document.createElement('p');
+            p.innerHTML = `<strong>${data.senderId}:</strong> ${data.message}`;
+            allMessage.appendChild(p);
+        });
+
+        sendBtn.addEventListener("click", (e) => {
+            const message = messageInput.value;
+            const senderId = username; 
+            const data = { message, senderId };
+            socket.emit("message", data);
+            messageInput.value = "";
+        });
+
     </script>
-  </body>
+
+</body>
+
 </html>

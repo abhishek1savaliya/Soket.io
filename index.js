@@ -10,11 +10,10 @@ const io = new Server(server)
 
 //socket.io 
 io.on('connection', (socket) => {
-    socket.on('message', (message) => {
-        io.emit('message', message)
-    })
-})
-
+    socket.on('message', (data) => {
+        io.emit('message', data);
+    });
+});
 app.use(express.static(path.resolve("./public")))
 
 app.get('/', (res, req) => {
