@@ -2,7 +2,7 @@ const http = require("http")
 const express = require('express')
 const path = require('path')
 const { Server } = require('socket.io')
-const { Socket } = require("dgram")
+const PORT = process.env.PORT || 5000
 
 const app = express()
 const server = http.createServer(app)
@@ -21,6 +21,6 @@ app.get('/', (res, req) => {
     return res.sendFile('./public/index.html')
 })
 
-server.listen(5000, () => {
+server.listen(PORT, () => {
     console.log("SERVER IS RUNNING ON PORT 5000")
 })
